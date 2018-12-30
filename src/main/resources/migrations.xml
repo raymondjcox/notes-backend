@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="1" author="raymondjcox">
+        <createTable tableName="notes">
+            <column name="id" type="bigserial">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="title" type="varchar">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content" type="varchar">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="2" author="me">
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION change_update_time() RETURNS trigger
+            LANGUAGE plpgsql
+            AS $$
+            BEGIN
+            NEW.updated_at := CURRENT_TIMESTAMP;
+            RETURN NEW;
+            END;
+            $$;
+        </createProcedure>
+        <rollback>
+            DROP FUNCTION change_update_time();
+        </rollback>
+    </changeSet>
+
+    <changeSet id="3" author="raymondjcox">
+        <addColumn tableName="notes">
+            <column name="updated_at" type="timestamp"  defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp"  defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="4" author="raymondjcox">
+        <sql>
+          CREATE TRIGGER add_updated_at_to_notes BEFORE UPDATE ON notes FOR EACH ROW EXECUTE PROCEDURE change_update_time();
+        </sql>
+
+        <rollback>
+          DROP TRIGGER add_updated_at_to_notes ON notes;
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
